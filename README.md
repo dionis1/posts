@@ -14,6 +14,7 @@ Installation
 1. composer install 
 2. create .env from .env. example and setup db settings 
 3. php artisan key:generate 
+4. php artisan migrate
 
 1.1 npm install
 1.2 npm run dev
