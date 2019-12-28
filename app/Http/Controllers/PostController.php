@@ -3,26 +3,39 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Repositories\PostRepositoryInterface;
 use App\Post;
 use App\User;
+use App\Http\Requests\PostRequest;
 
 class PostController extends Controller
 {
 
-    public function __construct()
+    protected $postData;
+
+    /** 
+     * PostController constructor.
+     *
+     * Check auth middleware
+     * @param PostRepositoryInterface $post
+     */
+    public function __construct(PostRepositoryInterface $postData)
     {
+        $this->postData = $postData;
         $this->middleware('auth');
     }
 
 	public function index(Request $request){
-
-        $posts = Post::all();
         
-    	return view('posts.index',compact('posts'));
+    	return view('posts.index');
     }
 
     public function show(Post $post){
+        
+        // implements PostRepositoryInterface 
+        // method get() except post id and return one post
 
+        $data = $this->postData->get($post->id);
 
     	return view('posts.show', compact('post'));
 
@@ -35,17 +48,21 @@ class PostController extends Controller
 
     }
 
-    public function store(Request $request){
+    public function store(PostRequest $request){
         
+        $validated = $request->validated();
 
-        $validatedData = $request->validate([
-            'title' => 'required',
-            'description' => 'required',
-        ]);
+        // implements PostRepositoryInterface 
+        // method create() except  request data 
 
-        $post = auth()->user()->posts()->create($validatedData);
+        $post = $this->postData->create(
+            array_merge($validated,
+                [
+                    'user_id'=>auth()->user()->id
+                ])
+        );
             
-    	return $post;
+    	return 'success';
 
     }
 
@@ -57,17 +74,16 @@ class PostController extends Controller
 
     }
 
-    public function update(Request $request, Post $post){
+    public function update(PostRequest $request, Post $post){
 
         $this->authorize('update',$post);
 
-        $validatedData = $request->validate([
-            'title' => 'required',
-            'description' => 'required',
-        ]);
+        $validated = $request->validated();
 
+        // implements PostRepositoryInterface 
+        // method update() except post id and request data 
 
-        $post->update($validatedData);
+        $posts = $this->postData->update($post->id,$validated);
 
     	return 'success';
 
@@ -84,7 +100,10 @@ class PostController extends Controller
     public function dataForDataTable()
     {
 
-         $posts = Post::select('id','title', 'created_at', 'updated_at', 'user_id')->with('user')->latest()->get();
+        // implements PostRepositoryInterface 
+        // method all() returns all posts
+
+        $posts = $this->postData->all();
 
         return datatables()->of($posts)
             ->addColumn('name', function($row){
@@ -98,7 +117,10 @@ class PostController extends Controller
     public function dataFromOneUserForDataTable()
     {
 
-         $posts = Post::where('user_id','=',auth()->user()->id)->select('id','title', 'created_at', 'updated_at')->latest()->get();
+        // implements PostRepositoryInterface 
+        // method getOneUserPosts() returns all posts from the user 
+
+        $posts = $this->postData->getOneUserPosts(auth()->user()->id);
 
         return datatables()->of($posts)
             ->make(true);
