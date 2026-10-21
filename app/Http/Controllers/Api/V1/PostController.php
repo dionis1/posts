@@ -103,17 +103,17 @@ class PostController extends Controller
     private function validatedContent(Request $request, ?Post $post = null): array
     {
         $rules = [
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['required', 'string', 'max:180'],
             'body' => ['required', 'string', 'max:100000'],
-            'slug' => ['nullable', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('posts', 'slug')->ignore($post?->id)],
+            'slug' => ['nullable', 'string', 'max:200', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('posts', 'slug')->ignore($post?->id)],
             'excerpt' => ['nullable', 'string', 'max:500'],
             'locale' => ['required', Rule::in(['en', 'de'])],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'cover_media_id' => ['nullable', 'integer', 'exists:media,id'],
-            'tag_ids' => ['sometimes', 'array', 'max:20'],
-            'tag_ids.*' => ['integer', 'distinct', 'exists:tags,id'],
-            'meta_title' => ['nullable', 'string', 'max:70'],
-            'meta_description' => ['nullable', 'string', 'max:160'],
+            'tags' => ['sometimes', 'array', 'max:20'],
+            'tags.*' => ['integer', 'distinct', 'exists:tags,id'],
+            'seo_title' => ['nullable', 'string', 'max:60'],
+            'seo_description' => ['nullable', 'string', 'max:160'],
             'canonical_url' => ['nullable', 'url:http,https', 'max:2048'],
         ];
         if ($post) {
