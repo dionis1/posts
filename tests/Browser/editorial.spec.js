@@ -25,3 +25,21 @@ test('public reading, registration, email verification and language selection', 
   await expect(page.locator('html')).toHaveAttribute('lang', 'de');
   await expect(page.getByRole('heading', { name: 'Geschichten, die es wert sind, geteilt zu werden.' })).toBeVisible();
 });
+
+test('verified editor can create a draft and preview Markdown', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Email address').fill('editor-browser@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('browser-test-password-123');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  await page.goto('/posts/create');
+  await page.getByLabel('Title', { exact: true }).fill('Browser editorial draft');
+  await expect(page.getByLabel('URL slug')).toHaveValue('browser-editorial-draft');
+  await page.getByLabel('Content', { exact: true }).fill('Important **reviewed** content.');
+  await page.getByRole('button', { name: 'Preview', exact: true }).click();
+  await expect(page.locator('#markdown-preview strong')).toHaveText('reviewed');
+  await page.getByRole('button', { name: 'Save draft' }).click();
+  await expect(page).toHaveURL(/\/posts\/\d+\/edit$/);
+  await expect(page.getByText('Draft created.')).toBeVisible();
+});

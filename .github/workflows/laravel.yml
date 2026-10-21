@@ -65,6 +65,7 @@ jobs:
           echo "DB_DATABASE=$PWD/database/browser.sqlite" >> .env
           touch database/browser.sqlite
           php artisan migrate --force
+          APP_ENV=testing php artisan db:seed --class=BrowserTestSeeder --force
       - run: npx playwright install --with-deps chromium
       - name: Start local application server
         run: |
