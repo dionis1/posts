@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PublicationController::class, 'index'])->name('publication.index');
 Route::get('/read/{slug}', [PublicationController::class, 'show'])->name('publication.show');
 Route::get('/sitemap.xml', [PublicationController::class, 'sitemap'])->name('publication.sitemap');
+// The media policy permits public access only when an image is a published cover.
+Route::get('/media/{media}', [MediaController::class, 'show'])->name('media.show');
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', [EditorialController::class, 'index'])->name('dashboard');
@@ -29,7 +31,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     Route::get('/media', [MediaController::class, 'index'])->name('media.index');
     Route::post('/media', [MediaController::class, 'store'])->middleware('throttle:10,1')->name('media.store');
-    Route::get('/media/{media}', [MediaController::class, 'show'])->name('media.show');
     Route::delete('/media/{media}', [MediaController::class, 'destroy'])->name('media.destroy');
 
     Route::get('/comments', [CommentController::class, 'index'])->name('comments.index');
