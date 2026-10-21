@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PublicationSearchRequest;
 use App\Models\Post;
 use App\Services\RecordPostView;
 use Illuminate\Http\Request;
 
 class PublicationController extends Controller
 {
-    public function index(Request $request)
+    public function index(PublicationSearchRequest $request)
     {
-        $request->validate(['q' => 'nullable|string|max:100', 'tag' => 'nullable|string|max:100', 'category' => 'nullable|string|max:100']);
         $posts = Post::published()->with(['author', 'category'])->when($request->filled('q'), fn ($q) => $q->search($request->string('q')->toString()))
             ->when($request->filled('category'), fn ($q) => $q->whereHas('category', fn ($c) => $c->where('slug', $request->input('category'))))
             ->when($request->filled('tag'), fn ($q) => $q->whereHas('tags', fn ($t) => $t->where('slug', $request->input('tag'))))

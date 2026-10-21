@@ -2,31 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\PostStatus;
+use App\Actions\Posts\CreatePostAction;
+use App\Actions\Posts\RestorePostAction;
+use App\Actions\Posts\TransitionPostAction;
+use App\Actions\Posts\UpdatePostAction;
+use App\Http\Requests\CalendarRequest;
+use App\Http\Requests\MarkdownPreviewRequest;
 use App\Http\Requests\PostInput;
-use App\Models\Category;
-use App\Models\Media;
+use App\Http\Requests\PostTransitionRequest;
+use App\Http\Requests\RevisionComparisonRequest;
+use App\Http\Requests\VersionRequest;
 use App\Models\Post;
 use App\Models\PostRevision;
-use App\Models\Tag;
-use App\Services\PostService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\Rule;
 
 class EditorialController extends Controller
 {
     public function index(Request $request)
     {
-        $filters = $request->validate(['q' => 'nullable|string|max:100', 'status' => ['nullable', Rule::enum(PostStatus::class)], 'category' => 'nullable|integer|exists:categories,id']);
-        $base = Post::visibleTo($request->user());
-        $counts = (clone $base)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
-        $posts = $base->with(['author', 'category'])->when($request->filled('q'), fn ($q) => $q->search($filters['q']))
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $filters['status']))
-            ->when($request->filled('category'), fn ($q) => $q->where('category_id', $filters['category']))->latest('updated_at')->orderByDesc('id')->paginate(12)->withQueryString();
-
-        return view('posts.index', compact('posts', 'counts') + ['categories' => Category::orderBy('name')->get()]);
+        return view('posts.index');
     }
 
     public function create()
@@ -36,10 +32,10 @@ class EditorialController extends Controller
         return view('posts.edit', $this->editorData(new Post(['locale' => app()->getLocale()])));
     }
 
-    public function store(PostInput $request, PostService $service)
+    public function store(PostInput $request, CreatePostAction $action)
     {
         Gate::authorize('create', Post::class);
-        $post = $service->create($request->user(), $request->validated());
+        $post = $action($request->user(), $request->validated());
 
         return redirect()->route('posts.edit', $post)->with('status', __('Draft created.'));
     }
@@ -47,35 +43,33 @@ class EditorialController extends Controller
     public function edit(Post $post)
     {
         Gate::authorize('view', $post);
-        $post->load(['tags', 'author']);
 
         return view('posts.edit', $this->editorData($post));
     }
 
     private function editorData(Post $post): array
     {
-        return ['post' => $post, 'categories' => Category::orderBy('name')->get(), 'tags' => Tag::orderBy('name')->get(),
-            'media' => Media::where('status', 'ready')->where('user_id', auth()->id())->latest()->limit(100)->get()];
+        return ['post' => $post];
     }
 
-    public function update(PostInput $request, Post $post, PostService $service)
+    public function update(PostInput $request, Post $post, UpdatePostAction $action)
     {
         Gate::authorize('update', $post);
         $request->validate(['lock_version' => 'required|integer|min:1']);
-        $service->update($request->user(), $post, $request->validated(), (int) $request->lock_version);
+        $action($request->user(), $post, $request->validated(), (int) $request->lock_version);
 
         return redirect()->route('posts.edit', $post)->with('status', __('Changes saved.'));
     }
 
-    public function transition(Request $request, Post $post, PostService $service)
+    public function transition(PostTransitionRequest $request, Post $post, TransitionPostAction $action)
     {
-        $data = $request->validate(['target' => ['required', Rule::enum(PostStatus::class)], 'lock_version' => 'required|integer|min:1', 'feedback' => 'nullable|string|max:2000', 'scheduled_at' => 'nullable|date']);
-        $service->transition($request->user(), $post, $data['target'], (int) $data['lock_version'], $data['feedback'] ?? null, $data['scheduled_at'] ?? null);
+        $data = $request->validated();
+        $action($request->user(), $post, $data['target'], (int) $data['lock_version'], $data['feedback'] ?? null, $data['scheduled_at'] ?? null);
 
         return back()->with('status', __('Workflow updated.'));
     }
 
-    public function revisions(Request $request, Post $post)
+    public function revisions(RevisionComparisonRequest $request, Post $post)
     {
         Gate::authorize('view', $post);
         $revisions = $post->revisions()->with('author')->orderByDesc('version')->paginate(20);
@@ -85,18 +79,18 @@ class EditorialController extends Controller
         return view('posts.revisions', compact('post', 'revisions', 'left', 'right'));
     }
 
-    public function restore(Request $request, Post $post, PostRevision $revision, PostService $service)
+    public function restore(VersionRequest $request, Post $post, PostRevision $revision, RestorePostAction $action)
     {
-        $data = $request->validate(['lock_version' => 'required|integer|min:1']);
+        $data = $request->validated();
         abort_unless($revision->post_id === $post->id, 404);
-        $service->restore($request->user(), $post, $revision, (int) $data['lock_version']);
+        $action($request->user(), $post, $revision, (int) $data['lock_version']);
 
         return redirect()->route('posts.edit', $post)->with('status', __('Revision restored as a new draft.'));
     }
 
-    public function preview(Request $request)
+    public function preview(MarkdownPreviewRequest $request)
     {
-        $data = $request->validate(['body' => 'required|string|max:100000']);
+        $data = $request->validated();
         $post = new Post(['body' => $data['body']]);
 
         return response()->json(['html' => $post->renderedBody()]);
@@ -109,9 +103,8 @@ class EditorialController extends Controller
         return view('posts.activity', ['post' => $post, 'activities' => $post->activities()->with('actor')->latest('created_at')->paginate(30)]);
     }
 
-    public function calendar(Request $request)
+    public function calendar(CalendarRequest $request)
     {
-        $request->validate(['month' => 'nullable|date_format:Y-m']);
         $month = CarbonImmutable::createFromFormat('!Y-m', $request->input('month', now()->format('Y-m')));
         $posts = Post::visibleTo($request->user())->whereIn('status', ['scheduled', 'published'])
             ->where(function ($q) use ($month) {

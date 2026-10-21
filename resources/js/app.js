@@ -22,6 +22,7 @@ if (editor) {
                 .replace(/^-+|-+$/g, '')
                 .slice(0, 180)
                 .replace(/-+$/g, '');
+            slug.dispatchEvent(new Event('input', { bubbles: true }));
         });
     }
 
