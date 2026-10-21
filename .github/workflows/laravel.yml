@@ -31,30 +31,11 @@ jobs:
   frontend:
     name: Frontend build
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      # Temporary one-time lockfile repair, removed after committing the generated lock.
-      - run: npm install --save-dev tailwindcss@^4 @tailwindcss/vite@^4
-      - uses: actions/upload-artifact@v4
-        with:
-          name: frontend-lockfile
-          path: |
-            package.json
-            package-lock.json
+      - run: npm ci
       - run: npm run build
-      - name: Commit generated frontend lockfile (one-time repair)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add package.json package-lock.json
-          if ! git diff --cached --quiet; then
-            git commit -m 'build: lock Tailwind CSS dependencies'
-            git push origin HEAD:master
-          fi
