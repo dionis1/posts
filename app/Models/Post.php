@@ -108,7 +108,9 @@ class Post extends Model
 
     public function renderedBody(): string
     {
-        return Str::markdown($this->body, [
+        // Strip raw HTML before parsing so an HTML block cannot swallow
+        // otherwise valid Markdown following it on the same line.
+        return Str::markdown(strip_tags($this->body ?? ''), [
             'html_input' => 'strip',
             'allow_unsafe_links' => false,
             'max_nesting_level' => 20,
