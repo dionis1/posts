@@ -118,6 +118,6 @@ class EditorialController extends Controller
                 $q->whereBetween('scheduled_at', [$month, $month->endOfMonth()])->orWhereBetween('published_at', [$month, $month->endOfMonth()]);
             })->with('author')->get();
 
-        return view('posts.calendar',compact('month', 'posts'));
+        return view('posts.calendar', compact('month', 'posts'));
     }
 }
