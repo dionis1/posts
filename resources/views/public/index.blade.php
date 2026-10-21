@@ -8,6 +8,11 @@
         <p class="muted">{{ __('Browse published articles from our editorial team.') }}</p>
     </div>
 </div>
+<form method="GET" action="{{ route('publication.index') }}" class="filter-bar" role="search">
+    <label for="public-search">{{ __('Search articles') }}</label>
+    <input id="public-search" name="q" type="search" maxlength="100" value="{{ request('q') }}" placeholder="{{ __('Search published articles') }}">
+    <button type="submit">{{ __('Search') }}</button>
+</form>
 @forelse ($posts as $post)
     <article class="card card-body">
         <h2><a href="{{ route('publication.show', $post->slug) }}">{{ $post->title }}</a></h2>

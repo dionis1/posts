@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>@yield('title', __('Editorial workspace')) · Posts</title>@vite(['resources/css/app.css','resources/js/app.js'])</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>@yield('title', __('Editorial workspace')) · Posts</title>@yield('meta')@vite(['resources/css/app.css','resources/js/app.js'])</head>
 <body class="{{ auth()->check() ? 'workspace-shell' : 'guest-shell' }}">
 <a class="skip-link" href="#main">{{ __('Skip to content') }}</a>
 @auth
