@@ -12,7 +12,7 @@ if (editor) {
     // Suggest a slug only for new, empty slugs. Never overwrite a user's choice.
     if (editor.dataset.newPost === 'true' && title && slug && !slug.value.trim()) {
         let manuallyEdited = false;
-        slug.addEventListener('input', () => { manuallyEdited = true; });
+        slug.addEventListener('input', (event) => { if (event.isTrusted) manuallyEdited = true; });
         title.addEventListener('input', () => {
             if (manuallyEdited) return;
             slug.value = title.value.normalize('NFKD')

@@ -34,7 +34,7 @@ test('verified editor can create a draft and preview Markdown', async ({ page })
   await expect(page).toHaveURL(/\/dashboard$/);
 
   await page.goto('/posts/create');
-  await page.getByLabel('Title', { exact: true }).fill('Browser editorial draft');
+  await page.getByLabel('Title', { exact: true }).pressSequentially('Browser editorial draft');
   await expect(page.getByLabel('URL slug')).toHaveValue('browser-editorial-draft');
   await page.getByLabel('Content', { exact: true }).fill('Important **reviewed** content.');
   await page.getByRole('button', { name: 'Preview', exact: true }).click();
