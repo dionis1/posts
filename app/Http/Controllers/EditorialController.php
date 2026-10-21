@@ -115,9 +115,9 @@ class EditorialController extends Controller
         $month = CarbonImmutable::createFromFormat('!Y-m', $request->input('month', now()->format('Y-m')));
         $posts = Post::visibleTo($request->user())->whereIn('status', ['scheduled', 'published'])
             ->where(function ($q) use ($month) {
-                $q->whereBetween('scheduled_at', [$month, $month->endOfMonth()])->orWhereBetween('published_at',[$month, $month->endOfMonth()]);
+                $q->whereBetween('scheduled_at', [$month, $month->endOfMonth()])->orWhereBetween('published_at', [$month, $month->endOfMonth()]);
             })->with('author')->get();
 
-        return view('posts.calendar',compact('month','posts'));
+        return view('posts.calendar',compact('month', 'posts'));
     }
 }
