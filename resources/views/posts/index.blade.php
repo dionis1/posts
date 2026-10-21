@@ -1,57 +1,8 @@
 @extends('layouts.app')
-
-@section('css')
-<link  href="https://cdn.datatables.net/1.10.16/css/jquery.dataTables.min.css" rel="stylesheet">
-@endsection
-
+@section('title',__('All content'))
 @section('content')
-@if(session()->has('message'))
-    <div class="alert alert-success">
-        {{ session()->get('message') }}
-    </div>
-@endif
-<div class="container">
-               <h2>Your Posts</h2>
-            <table class="table table-bordered posts_datatable" id="posts_datatable">
-               <thead>
-                  <tr>
-                     <th>Id</th>
-                     <th>Title</th>
-                     <th>Created at</th>
-                     <th>Updated at</th>
-                     <th>Action</th>
-                  </tr>
-               </thead>
-            </table>
-</div>
-@endsection
-@section('js')
-<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
-
-<script src="//cdn.datatables.net/plug-ins/1.10.11/sorting/date-eu.js" type="text/javascript"></script>
-<script type="text/javascript"  src=" https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript"  src=" https://cdn.datatables.net/buttons/1.2.4/js/dataTables.buttons.min.js"></script>
-<script>
-   $(document).ready( function () {
-    $('.posts_datatable').DataTable({
-           processing: true,
-           serverSide: true,
-           order: [[ 2, "desc" ]],
-           columnDefs : [{"targets":2, "type":"date-eu"}],
-           ajax: "{{ route('userPostsDataTable') }}",
-           columns: [
-                    { data: 'id', name: 'id' },
-                    { data: 'title', name: 'title' },
-                    { data: 'created_at', name: 'created_at' },
-                    { data: 'updated_at', name: 'updated_at' },
-                    {
-					    data: 'action',
-					    render: function( data, type, full, meta) {
-					        return '<a href="/post/show/'+full.id+'" class="btn btn-success">Show</a><a href="/post/'+full.id+'/edit" class="btn btn-info">Edit</a><a href="/post/delete/'+full.id+'" class="btn btn-danger">Delete</a>';
-					    }
-					}
-                 ]
-        });
-     });
-  </script>
+<div class="page-heading"><div><p class="eyebrow">{{ __('YOUR EDITORIAL DESK') }}</p><h1>{{ __('Good stories start here.') }}</h1><p class="muted">{{ __('Bring your ideas to life, one thoughtful article at a time.') }}</p></div>@can('create',App\Models\Post::class)<a class="button primary" href="{{ route('posts.create') }}">＋ {{ __('New article') }}</a>@endcan</div>
+<div class="stats-grid">@foreach(['draft'=>['Drafts','In the making'],'review'=>['In review','Ready for another perspective'],'scheduled'=>['Scheduled','On the calendar'],'published'=>['Published','Out in the world']] as $state=>$labels)<a class="stat-card" href="{{ route('posts.index',['status'=>$state]) }}"><span class="stat-label">{{ __($labels[0]) }}</span><strong>{{ $counts[$state]??0 }}</strong><span class="muted">{{ __($labels[1]) }}</span></a>@endforeach</div>
+<section class="card"><div class="card-heading"><h2>{{ __('Content library') }}</h2><span class="muted">{{ $posts->total() }} {{ __('articles') }}</span></div><form class="filter-bar" method="GET"><label class="search-field"><span class="sr-only">{{ __('Search articles') }}</span><input name="q" value="{{ request('q') }}" placeholder="{{ __('Search articles') }}"></label><label><span class="sr-only">{{ __('Status') }}</span><select name="status"><option value="">{{ __('All statuses') }}</option>@foreach(App\Enums\PostStatus::cases() as $status)<option value="{{ $status->value }}" @selected(request('status')===$status->value)>{{ __(ucfirst($status->value)) }}</option>@endforeach</select></label><label><span class="sr-only">{{ __('Category') }}</span><select name="category"><option value="">{{ __('All categories') }}</option>@foreach($categories as $category)<option value="{{ $category->id }}" @selected(request('category')==$category->id)>{{ $category->name }}</option>@endforeach</select></label><button class="button secondary">{{ __('Filter') }}</button><a class="quiet" href="{{ route('posts.index') }}">{{ __('Clear') }}</a></form>
+<div class="table-wrap"><table><thead><tr><th>{{ __('ARTICLE') }}</th><th>{{ __('STATUS') }}</th><th>{{ __('AUTHOR') }}</th><th>{{ __('UPDATED') }}</th><th><span class="sr-only">{{ __('Actions') }}</span></th></tr></thead><tbody>@forelse($posts as $post)<tr><td><a class="article-link" href="{{ route('posts.edit',$post) }}"><span class="article-monogram color-{{ $post->id%4 }}">{{ mb_substr($post->title,0,1) }}</span><span><strong>{{ $post->title }}</strong><small>{{ $post->category?->name??__('Uncategorized') }} · {{ strtoupper($post->locale) }}</small></span></a></td><td><span class="badge {{ $post->status->value }}">{{ __(ucfirst($post->status->value)) }}</span></td><td>{{ $post->author?->name??__('Former author') }}</td><td class="muted">{{ $post->updated_at->format('d M Y') }}</td><td><a href="{{ route('posts.edit',$post) }}" class="quiet" aria-label="{{ __('Open') }} {{ $post->title }}">→</a></td></tr>@empty<tr><td colspan="5" class="empty"><h3>{{ __('Your next story belongs here.') }}</h3><p>{{ __('Create an article or adjust your filters.') }}</p></td></tr>@endforelse</tbody></table></div>{{ $posts->links() }}</section>
 @endsection

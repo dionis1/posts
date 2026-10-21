@@ -1,90 +1,16 @@
-<!doctype html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <!-- CSRF Token -->
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
-    <title>{{ config('app.name', 'Laravel') }}</title>
-
-    <!-- Scripts -->
-    <script src="{{ asset('js/app.js') }}" defer></script>
-
-    <!-- Fonts -->
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet">
-
-    <!-- Styles -->
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
-    @yield('css')
-</head>
-<body>
-    <div id="app">
-        <nav class="navbar navbar-expand-md navbar-light bg-white shadow-sm">
-            <div class="container">
-                @auth
-                    <a class="navbar-brand" href="{{ url('/home') }}">
-                        All Posts
-                    </a>
-                    <a class="navbar-brand" href="{{ url('/post') }}">
-                        Your Posts
-                    </a>
-                    <a class="navbar-brand" href="{{ url('/post/create') }}">
-                        Create New Post
-                    </a>
-                @endauth
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="{{ __('Toggle navigation') }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <!-- Left Side Of Navbar -->
-                    <ul class="navbar-nav mr-auto">
-
-                    </ul>
-
-                    <!-- Right Side Of Navbar -->
-                    <ul class="navbar-nav ml-auto">
-                        <!-- Authentication Links -->
-                        @guest
-                            <li class="nav-item">
-                                <a class="nav-link" href="{{ route('login') }}">{{ __('Login') }}</a>
-                            </li>
-                            @if (Route::has('register'))
-                                <li class="nav-item">
-                                    <a class="nav-link" href="{{ route('register') }}">{{ __('Register') }}</a>
-                                </li>
-                            @endif
-                        @else
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    {{ Auth::user()->name }} <span class="caret"></span>
-                                </a>
-
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                    <a class="dropdown-item" href="{{ route('logout') }}"
-                                       onclick="event.preventDefault();
-                                                     document.getElementById('logout-form').submit();">
-                                        {{ __('Logout') }}
-                                    </a>
-
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                                        @csrf
-                                    </form>
-                                </div>
-                            </li>
-                        @endguest
-                    </ul>
-                </div>
-            </div>
-        </nav>
-
-        <main class="py-4">
-            @yield('content')
-        </main>
-    </div>
-</body>
-  @yield('js')
-</html>
+<!DOCTYPE html>
+<html lang="{{ app()->getLocale() }}">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="{{ csrf_token() }}"><title>@yield('title', __('Editorial workspace')) · Posts</title>@vite(['resources/css/app.css','resources/js/app.js'])</head>
+<body class="{{ auth()->check() ? 'workspace-shell' : 'guest-shell' }}">
+<a class="skip-link" href="#main">{{ __('Skip to content') }}</a>
+@auth
+<aside class="sidebar"><a class="brand" href="{{ route('dashboard') }}"><span class="brand-mark">P</span>posts<span class="studio">STUDIO</span></a><p class="nav-label">{{ __('WORKSPACE') }}</p>
+<nav aria-label="{{ __('Main navigation') }}">
+@foreach(['dashboard'=>['◫','Overview'],'posts.index'=>['▤','All content'],'calendar.index'=>['▦','Calendar'],'media.index'=>['▧','Media library'],'taxonomy.index'=>['⌗','Categories & tags'],'comments.index'=>['◌','Comments'],'analytics.index'=>['↗','Analytics'],'notifications.index'=>['◉','Notifications']] as $route=>$item)
+@if(Route::has($route))<a class="nav-item {{ request()->routeIs($route) ? 'active' : '' }}" href="{{ route($route) }}"><span aria-hidden="true">{{ $item[0] }}</span>{{ __($item[1]) }}</a>@endif
+@endforeach
+</nav><div class="sidebar-bottom"><a href="{{ route('publication.index') }}" class="nav-item">↗ {{ __('View publication') }}</a>@if(auth()->user()->hasRole('admin'))<a class="nav-item" href="{{ route('team.index') }}">{{ __('Team') }}</a>@endif<a class="nav-item" href="{{ route('profile.edit') }}">{{ __('Account settings') }}</a><p class="sidebar-note">{{ __('One team. Many perspectives.') }}</p></div></aside>
+@endif
+<div class="shell-main"><header class="topbar">@guest<a class="brand" href="{{ route('publication.index') }}"><span class="brand-mark">P</span>posts</a>@else <span class="breadcrumb">{{ __('Workspace') }} <span>/</span> @yield('title',__('Overview'))</span>@endguest<div class="topbar-actions"><form method="POST" action="{{ route('locale.update') }}">@csrf<label class="sr-only" for="locale">{{ __('Language') }}</label><select name="locale" id="locale" onchange="this.form.submit()"><option value="en" @selected(app()->getLocale()==='en')>EN</option><option value="de" @selected(app()->getLocale()==='de')>DE</option></select><noscript><button>{{ __('Apply') }}</button></noscript></form>@auth<span class="avatar">{{ mb_substr(auth()->user()->name,0,1) }}</span><span class="user-name">{{ auth()->user()->name }}<small>{{ __(ucfirst(auth()->user()->role->value)) }}</small></span><form method="POST" action="{{ route('logout') }}">@csrf<button class="quiet">{{ __('Sign out') }}</button></form>@else<a href="{{ route('login') }}">{{ __('Sign in') }}</a>@endauth</div></header>
+<main id="main" class="page">@if(session('status'))<div class="notice" role="status">{{ session('status') }}</div>@endif @if(session('token'))<div class="notice"><p>{{ __('Copy this token now. It will not be shown again.') }}</p><code>{{ session('token') }}</code></div>@endif @if($errors->any())<div class="error-summary" role="alert"><strong>{{ __('Please review the following:') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif @yield('content')</main><footer>Posts Studio · {{ __('Thoughtful publishing, together.') }}</footer></div>
+</body></html>

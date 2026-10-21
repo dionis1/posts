@@ -1,18 +1,14 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\V1\PostController;
+use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| is assigned the "api" middleware group. Enjoy building your API!
-|
-*/
-
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
+Route::prefix('v1')->middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function () {
+    Route::get('/posts', [PostController::class, 'index'])->name('api.v1.posts.index');
+    Route::post('/posts', [PostController::class, 'store'])->name('api.v1.posts.store');
+    Route::get('/posts/{post}', [PostController::class, 'show'])->name('api.v1.posts.show');
+    Route::put('/posts/{post}', [PostController::class, 'update'])->name('api.v1.posts.update');
+    Route::post('/posts/{post}/transitions', [PostController::class, 'transition'])->name('api.v1.posts.transition');
+    Route::post('/posts/{post}/revisions/{revision}/restore', [PostController::class, 'restore'])->name('api.v1.posts.restore');
+    Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('api.v1.posts.destroy');
 });
