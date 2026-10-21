@@ -335,6 +335,9 @@ class WorkflowTest extends TestCase
     {
         $author = $this->actor();
         $post = $this->service->create($author, ['title' => 'Concurrency control', 'body' => 'Optimistic locking protects editors.']);
+        // Verify the FTS index independently of the Eloquent scope.
+        $matches = \Illuminate\Support\Facades\DB::select('SELECT rowid FROM post_search WHERE post_search MATCH ?', ['"optimistic" AND "locking"']);
+        $this->assertSame([$post->id], array_map(fn ($row) => $row->rowid, $matches));
         $this->assertSame([$post->id], Post::search('optimistic locking')->pluck('id')->all());
         $this->assertSame([$post->id], Post::search('"optimistic" + locking*')->pluck('id')->all());
         $this->assertSame([], Post::search('missing OR optimistic')->pluck('id')->all());
