@@ -8,7 +8,7 @@
 <article class="card card-body">
     <a href="{{ route('publication.index') }}">← {{ __('All articles') }}</a>
     <h1>{{ $post->title }}</h1>
-    @if ($post->coverMedia?->status === 'ready')
+    @if ($post->coverMedia?->status === \App\Enums\MediaStatus::Ready)
         <img class="article-cover" src="{{ route('media.show', $post->coverMedia) }}" alt="{{ $post->title }}" loading="lazy">
     @endif
     <p class="muted">{{ $post->author?->name }} · {{ $post->published_at?->format('Y-m-d') }}</p>

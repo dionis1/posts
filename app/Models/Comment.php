@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CommentStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +14,7 @@ class Comment extends Model
 
     protected function casts(): array
     {
-        return ['moderated_at' => 'datetime', 'depth' => 'integer'];
+        return ['status' => CommentStatus::class, 'moderated_at' => 'datetime', 'depth' => 'integer'];
     }
 
     public function post(): BelongsTo

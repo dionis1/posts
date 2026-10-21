@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\MediaStatus;
 use App\Enums\Role;
 use App\Models\Media;
 use App\Models\Post;
@@ -21,7 +22,7 @@ class MediaPolicy
 
     public function view(?User $user, Media $media): bool
     {
-        if ($media->status !== 'ready') {
+        if ($media->status !== MediaStatus::Ready) {
             return false;
         }
 

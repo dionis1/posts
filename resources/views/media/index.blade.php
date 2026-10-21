@@ -17,8 +17,8 @@
     @forelse ($media as $image)
         <article class="card card-body">
             <h2>{{ $image->original_name }}</h2>
-            <p class="muted">{{ ucfirst($image->status) }}</p>
-            @if ($image->status === 'ready')
+            <p class="muted">{{ ucfirst($image->status->value) }}</p>
+            @if ($image->status === \App\Enums\MediaStatus::Ready)
                 <img loading="lazy" src="{{ route('media.show', $image) }}?thumbnail=1" alt="{{ $image->original_name }}" width="240">
             @endif
             @can('delete', $image)

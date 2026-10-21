@@ -242,8 +242,8 @@ class WorkflowTest extends TestCase
         $post = $this->service->transition($editor, $post, 'scheduled', 3, null, now()->addMinute()->toIso8601String());
         $job = new PublishPost($post->id, 4);
         $this->travel(2)->minutes();
-        $job->handle($this->service);
-        $job->handle($this->service);
+        app()->call([$job, 'handle']);
+        app()->call([$job, 'handle']);
         $this->assertSame(PostStatus::Published, $post->fresh()->status);
         $this->assertSame(5, $post->fresh()->lock_version);
         $this->assertSame(1, $post->activities()->where('event', 'post.published')->count());

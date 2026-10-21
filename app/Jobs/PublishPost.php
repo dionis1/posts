@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Services\PostService;
+use App\Actions\Posts\PublishScheduledPostAction;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -19,8 +19,8 @@ class PublishPost implements ShouldQueue
         $this->afterCommit();
     }
 
-    public function handle(PostService $service): void
+    public function handle(PublishScheduledPostAction $publish): void
     {
-        $service->publishScheduled($this->postId, $this->version);
+        $publish($this->postId, $this->version);
     }
 }

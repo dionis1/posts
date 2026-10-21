@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\MediaStatus;
 use App\Models\Media;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -28,7 +29,7 @@ class ProcessMedia implements ShouldQueue
     public function handle(): void
     {
         $media = Media::find($this->mediaId);
-        if (! $media || $media->status === 'ready') {
+        if (! $media || $media->status === MediaStatus::Ready) {
             return;
         }
         $disk = Storage::disk($media->disk);
