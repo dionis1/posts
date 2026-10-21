@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Media\DeleteMediaAction;
+use App\Actions\Media\UploadMediaAction;
 use App\Enums\Role;
-use App\Jobs\ProcessMedia;
+use App\Http\Requests\UploadMediaRequest;
 use App\Models\Media;
-use App\Models\Post;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 
 class MediaController extends Controller
 {
@@ -23,30 +23,9 @@ class MediaController extends Controller
         return view('media.index', compact('media'));
     }
 
-    public function store(Request $request)
+    public function store(UploadMediaRequest $request, UploadMediaAction $upload)
     {
-        Gate::authorize('create', Media::class);
-        $request->validate(['image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'extensions:jpg,jpeg,png,webp', 'max:5120', 'dimensions:min_width=32,min_height=32,max_width=6000,max_height=6000']]);
-        $file = $request->file('image');
-        $dimensions = getimagesize($file->getRealPath());
-        if (! $dimensions || $dimensions[0] * $dimensions[1] > 20000000) {
-            throw ValidationException::withMessages(['image' => __('The image must contain no more than 20 million pixels.')]);
-        }
-        $path = $file->store('media/incoming', 'local');
-        if (! $path) {
-            throw ValidationException::withMessages(['image' => __('The image could not be stored. Please try again.')]);
-        }
-        $media = Media::create([
-            'user_id' => $request->user()->id,
-            'path' => $path,
-            'original_name' => mb_substr(basename($file->getClientOriginalName()), 0, 255),
-            'mime' => $file->getMimeType(),
-            'size' => $file->getSize(),
-            'width' => $dimensions[0],
-            'height' => $dimensions[1],
-            'status' => 'pending',
-        ]);
-        ProcessMedia::dispatch($media->id)->afterCommit();
+        $upload($request->user(), $request->file('image'));
 
         return back()->with('status', __('Image uploaded. Processing may take a moment.'));
     }
@@ -65,16 +44,9 @@ class MediaController extends Controller
         ]);
     }
 
-    public function destroy(Media $media)
+    public function destroy(Request $request, Media $media, DeleteMediaAction $delete)
     {
-        Gate::authorize('delete', $media);
-        if (Post::query()->where('cover_media_id', $media->id)->exists()) {
-            throw ValidationException::withMessages(['image' => __('Remove this image from its posts before deleting it.')]);
-        }
-        $disk = $media->disk;
-        $paths = array_filter([$media->path, $media->thumbnail_path]);
-        $media->delete();
-        Storage::disk($disk)->delete($paths);
+        $delete($request->user(), $media);
 
         return back()->with('status', __('Image deleted.'));
     }

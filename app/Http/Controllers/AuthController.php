@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\EmailRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Models\User;
 use App\Services\RevokeUserSessions;
 use Illuminate\Auth\Events\PasswordReset;
@@ -13,20 +17,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password as PasswordRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function register(Request $request): RedirectResponse
+    public function register(RegisterRequest $request): RedirectResponse
     {
-        $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'string', 'email', 'max:254', 'unique:users'],
-            'password' => ['required', 'confirmed', PasswordRule::min(12)->max(128)],
-        ]);
+        $data = $request->validated();
         $user = User::create($data);
         event(new Registered($user));
         Auth::login($user);
@@ -35,14 +33,9 @@ class AuthController extends Controller
         return redirect()->route('verification.notice');
     }
 
-    public function login(Request $request): RedirectResponse
+    public function login(LoginRequest $request): RedirectResponse
     {
-        $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
-        $data = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:254'],
-            'password' => ['required', 'string', 'max:128'],
-            'remember' => ['sometimes', 'boolean'],
-        ]);
+        $data = $request->validated();
         $key = 'login:'.hash('sha256', $data['email'].'|'.$request->ip());
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages(['email' => __('Too many attempts. Please try again in :seconds seconds.', ['seconds' => RateLimiter::availableIn($key)])]);
@@ -94,10 +87,8 @@ class AuthController extends Controller
         return back()->with('status', __('Verification link sent. Please check your email.'));
     }
 
-    public function requestReset(Request $request): RedirectResponse
+    public function requestReset(EmailRequest $request): RedirectResponse
     {
-        $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
-        $request->validate(['email' => ['required', 'email', 'max:254']]);
         Password::sendResetLink($request->only('email'));
 
         // Keep the response identical for registered and unknown addresses.
@@ -109,13 +100,9 @@ class AuthController extends Controller
         return view('auth.reset-password', ['token' => $token, 'email' => $request->query('email')]);
     }
 
-    public function resetPassword(Request $request, RevokeUserSessions $sessions): RedirectResponse
+    public function resetPassword(ResetPasswordRequest $request, RevokeUserSessions $sessions): RedirectResponse
     {
-        $data = $request->validate([
-            'token' => ['required', 'string'],
-            'email' => ['required', 'email', 'max:254'],
-            'password' => ['required', 'confirmed', PasswordRule::min(12)->max(128)],
-        ]);
+        $data = $request->validated();
         $status = Password::reset($data, function (User $user, string $password) use ($sessions): void {
             $user->forceFill(['password' => $password, 'remember_token' => Str::random(60)])->save();
             $sessions->handle($user);

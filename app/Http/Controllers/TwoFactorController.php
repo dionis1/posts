@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ConfirmSecondFactorRequest;
+use App\Http\Requests\CurrentPasswordRequest;
+use App\Http\Requests\DisableSecondFactorRequest;
+use App\Http\Requests\SecondFactorRequest;
 use App\Models\User;
 use App\Services\RevokeUserSessions;
 use App\Services\VerifySecondFactor;
@@ -16,9 +20,8 @@ use PragmaRX\Google2FA\Google2FA;
 
 class TwoFactorController extends Controller
 {
-    public function setup(Request $request, Google2FA $totp): RedirectResponse
+    public function setup(CurrentPasswordRequest $request, Google2FA $totp): RedirectResponse
     {
-        $request->validate(['current_password' => ['required', 'current_password']]);
         abort_if($request->user()->two_factor_confirmed_at, 409);
         $request->user()->forceFill([
             'two_factor_secret' => $totp->generateSecretKey(),
@@ -30,9 +33,9 @@ class TwoFactorController extends Controller
         return back()->with('status', __('Enter the setup key in your authenticator app, then confirm a code.'));
     }
 
-    public function confirm(Request $request, VerifySecondFactor $verification, RevokeUserSessions $sessions): RedirectResponse
+    public function confirm(ConfirmSecondFactorRequest $request, VerifySecondFactor $verification, RevokeUserSessions $sessions): RedirectResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'regex:/^[0-9]{6}$/']]);
+        $data = $request->validated();
         abort_if($request->user()->two_factor_confirmed_at, 409);
         abort_unless($request->session()->get('two_factor_setup_until', 0) > now()->timestamp, 403);
         if (! $verification->handle($request->user(), $data['code'])) {
@@ -52,12 +55,9 @@ class TwoFactorController extends Controller
         return back()->with('recovery_codes', $codes)->with('status', __('Two-factor authentication enabled. Save your recovery codes now.'));
     }
 
-    public function disable(Request $request, VerifySecondFactor $verification, RevokeUserSessions $sessions): RedirectResponse
+    public function disable(DisableSecondFactorRequest $request, VerifySecondFactor $verification, RevokeUserSessions $sessions): RedirectResponse
     {
-        $data = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'code' => ['required', 'string', 'max:50'],
-        ]);
+        $data = $request->validated();
         if (! $verification->handle($request->user(), $data['code'])) {
             throw ValidationException::withMessages(['code' => __('The authentication code is invalid or has already been used.')]);
         }
@@ -86,9 +86,9 @@ class TwoFactorController extends Controller
         return view('auth.two-factor-challenge');
     }
 
-    public function challenge(Request $request, VerifySecondFactor $verification): RedirectResponse
+    public function challenge(SecondFactorRequest $request, VerifySecondFactor $verification): RedirectResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', 'max:50']]);
+        $data = $request->validated();
         $user = User::query()->find($request->session()->get('two_factor_user_id'));
         if (! $user || ! $user->two_factor_confirmed_at
             || $request->session()->get('two_factor_expires_at', 0) <= now()->timestamp

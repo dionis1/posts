@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ChangePasswordRequest;
+use App\Http\Requests\LocaleRequest;
+use App\Http\Requests\ProfileInput;
 use App\Services\RevokeUserSessions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -18,16 +19,10 @@ class ProfileController extends Controller
         return view('profile.edit', ['user' => $request->user()]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(ProfileInput $request): RedirectResponse
     {
-        $request->merge(['email' => Str::lower(trim((string) $request->input('email')))]);
         $user = $request->user();
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:120'],
-            'email' => ['required', 'email', 'max:254', Rule::unique('users')->ignore($user->id)],
-            'locale' => ['required', Rule::in(['en', 'de'])],
-            'current_password' => ['required', 'current_password'],
-        ]);
+        $data = $request->validated();
         unset($data['current_password']);
         $user->fill($data);
         if ($user->isDirty('email')) {
@@ -41,12 +36,9 @@ class ProfileController extends Controller
         return back()->with('status', __('Profile updated.'));
     }
 
-    public function password(Request $request, RevokeUserSessions $sessions): RedirectResponse
+    public function password(ChangePasswordRequest $request, RevokeUserSessions $sessions): RedirectResponse
     {
-        $data = $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::min(12)->max(128)],
-        ]);
+        $data = $request->validated();
         $user = $request->user();
         $user->forceFill(['password' => $data['password'], 'remember_token' => Str::random(60)])->save();
         $sessions->handle($user);
@@ -57,9 +49,9 @@ class ProfileController extends Controller
         return redirect()->route('login')->with('status', __('Password updated. Please sign in again on your devices.'));
     }
 
-    public function locale(Request $request): RedirectResponse
+    public function locale(LocaleRequest $request): RedirectResponse
     {
-        $data = $request->validate(['locale' => ['required', Rule::in(['en', 'de'])]]);
+        $data = $request->validated();
         $request->session()->put('locale', $data['locale']);
         $request->user()?->update($data);
 
