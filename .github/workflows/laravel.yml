@@ -1,0 +1,41 @@
+name: Laravel development checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    name: PHP tests and style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, dom, xml, sqlite3, pdo_sqlite, bcmath, fileinfo
+          coverage: none
+          tools: composer:v2
+      - name: Validate Composer metadata
+        run: composer validate --no-check-publish
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test
+      - name: Run Laravel tests
+        run: php artisan test
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
