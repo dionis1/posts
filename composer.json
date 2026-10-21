@@ -11,9 +11,10 @@
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.17",
-        "laravel/tinker": "^3.0",
         "laravel/sanctum": "^4.3",
+        "laravel/tinker": "^3.0",
         "league/commonmark": "^2.8",
+        "livewire/livewire": "^4.0",
         "pragmarx/google2fa": "^9.1"
     },
     "require-dev": {
