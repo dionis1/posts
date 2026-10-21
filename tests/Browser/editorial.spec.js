@@ -11,7 +11,7 @@ test('public reading, registration, email verification and language selection', 
 
   await page.goto('/register');
   await page.getByLabel('Name', { exact: true }).fill('Browser Test');
-  await page.getByLabel('Email address').fill('browser@example.test');
+  await page.getByLabel('Email address').fill('browser-' + Date.now() + '@example.test');
   await page.getByLabel('Password (at least 12 characters)').fill('browser-test-password-123');
   await page.getByLabel('Confirm password').fill('browser-test-password-123');
   await page.getByRole('button', { name: 'Create an account' }).click();

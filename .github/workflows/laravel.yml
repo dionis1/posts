@@ -61,12 +61,14 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
-          touch database/database.sqlite
+          sed -i 's#^APP_URL=.*#APP_URL=http://127.0.0.1:8010#' .env
+          echo "DB_DATABASE=$PWD/database/browser.sqlite" >> .env
+          touch database/browser.sqlite
           php artisan migrate --force
       - run: npx playwright install --with-deps chromium
       - name: Start local application server
         run: |
-          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel-browser.log 2>&1 &
+          php artisan serve --host=127.0.0.1 --port=8010 > /tmp/laravel-browser.log 2>&1 &
           sleep 3
       - run: npm run test:browser
       - name: Print server errors on failure
