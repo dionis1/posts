@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\EditorialController;
+use App\Http\Controllers\PublicationController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/login');
+Route::get('/', [PublicationController::class, 'index'])->name('publication.index');
+Route::get('/read/{slug}', [PublicationController::class, 'show'])->name('publication.show');
+Route::get('/sitemap.xml', [PublicationController::class, 'sitemap'])->name('publication.sitemap');
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', [EditorialController::class, 'index'])->name('dashboard');
