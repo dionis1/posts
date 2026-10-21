@@ -39,3 +39,36 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+  browser:
+    name: Browser smoke tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, xml, sqlite3, pdo_sqlite, intl, gd
+          coverage: none
+          tools: composer:v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: npm ci
+      - run: npm run build
+      - name: Create disposable browser database
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --force
+      - run: npx playwright install --with-deps chromium
+      - name: Start local application server
+        run: |
+          php artisan serve --host=127.0.0.1 --port=8000 > /tmp/laravel-browser.log 2>&1 &
+          sleep 3
+      - run: npm run test:browser
+      - name: Print server errors on failure
+        if: failure()
+        run: cat /tmp/laravel-browser.log || true
