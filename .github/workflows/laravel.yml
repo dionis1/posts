@@ -37,5 +37,12 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
+      # Temporary one-time lockfile repair, removed after committing the generated lock.
+      - run: npm install --save-dev tailwindcss@^4 @tailwindcss/vite@^4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-lockfile
+          path: |
+            package.json
+            package-lock.json
       - run: npm run build
