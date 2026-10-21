@@ -4,12 +4,15 @@ namespace App\Models;
 
 use App\Enums\CommentStatus;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Comment extends Model
 {
+    use HasFactory;
+
     protected $fillable = ['post_id', 'user_id', 'parent_id', 'depth', 'body', 'status', 'moderated_by', 'moderated_at'];
 
     protected function casts(): array
