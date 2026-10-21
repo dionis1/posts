@@ -13,7 +13,9 @@ class LocaleTest extends TestCase
     public function test_guest_language_selection_persists_across_web_requests(): void
     {
         $this->post(route('locale.update'), ['locale' => 'de'])->assertRedirect();
-        $this->get('/')->assertOk()->assertSee('lang="de"', false);
+        $this->get('/')->assertOk()
+            ->assertSee('lang="de"', false)
+            ->assertSee('Geschichten, die es wert sind, geteilt zu werden.');
     }
 
     public function test_authenticated_language_selection_is_saved_to_profile(): void
