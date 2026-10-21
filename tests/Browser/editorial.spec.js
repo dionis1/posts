@@ -73,8 +73,8 @@ test('Livewire saves edits and filters articles without navigation', async ({ pa
   await expect(page.getByLabel('URL slug')).toHaveValue('searchable-article');
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations.filter(v => ['critical', 'serious'].includes(v.impact))).toEqual([]);
-  await page.screenshot({ path: 'docs/screenshots/editor.png', fullPage: true });
+  await page.screenshot({ path: test.info().outputPath('editor.png'), fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.screenshot({ path: 'docs/screenshots/editor-mobile.png', fullPage: true });
+  await page.screenshot({ path: test.info().outputPath('editor-mobile.png'), fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
