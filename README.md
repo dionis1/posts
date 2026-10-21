@@ -1,106 +1,122 @@
-# Posts Studio — Laravel Editorial Platform
+# Posts · Editorial publishing workspace
 
-A Laravel 13 editorial publishing application, modernized from an earlier Laravel 6 posts demo. This repository focuses on **Laravel application development**, not infrastructure or deployment automation.
+A Laravel 13 application for one editorial team, built with Livewire 4 and Tailwind CSS 4. Authors draft articles, independent reviewers approve them, and editors publish or schedule them.
 
-## Implemented areas
+![Livewire article editor](docs/screenshots/editor.png)
 
-- Account registration, login, email verification, password resets, profiles, and optional two-factor authentication.
-- Author, reviewer, editor, and administrator roles, with policy-based separation of duties.
-- Draft → review → approval → scheduled/published → archived workflows.
-- Post revision snapshots, activity history, and optimistic concurrency checks.
-- Categories, tags, Markdown content with raw-HTML and unsafe-link protections, and SEO metadata.
-- Published article pages, sitemap, moderated comments, media upload/processing, notifications, CSV analytics, and a versioned Sanctum API.
-- SQLite full-text search with triggers that keep its index synchronized.
-- PHPUnit feature tests and development-only GitHub Actions checks (tests, Pint, Vite build).
+## Application features
 
-Some features have more test coverage than others. A passing workflow is **not** a substitute for a manual review of every user journey or a production security assessment.
+- Registration, email verification, password recovery, optional authenticator-based two-factor login, and single-use recovery codes.
+- Author, reviewer, editor, and administrator roles enforced with policies.
+- Draft → review → approved → scheduled/published → archived, including rejection feedback and reopening.
+- Authors cannot approve their own work, including when they are administrators.
+- Optimistic version checks prevent stale edits and transitions from overwriting newer changes.
+- Revision comparison/restoration and transactional activity history.
+- Livewire article editing with a dedicated Form object, safe Markdown preview, loading states, and validation feedback.
+- Debounced content search, reactive filters, URL query state, and server-side pagination.
+- Categories, tags, processed private media, moderated threaded comments, and publication SEO/sitemap.
+- Scoped analytics, CSV export with formula neutralization, queued notifications, and a versioned Sanctum API.
+- English and German interfaces.
 
-## Requirements
+Livewire updates the current browser. Different sessions do not receive pushed updates; concurrent writes are detected when they reach the server.
 
-- **PHP 8.4+** (the committed Composer lockfile includes Symfony packages requiring PHP 8.4.1+).
-- Composer 2.
-- Node.js 22 and npm.
-- PHP extensions required by Composer and SQLite, plus GD for image processing.
+## Run locally with Docker Compose
 
-## Local development
+Docker Engine and Docker Compose are the only host requirements. PHP, Composer, Node, and SQLite run inside the image.
 
 ```bash
 git clone git@github.com:dionis1/posts.git
 cd posts
-composer install
-cp .env.example .env
-php artisan key:generate
-touch database/database.sqlite
-php artisan migrate
+docker compose up --build -d
+```
+
+Open [http://localhost:8000](http://localhost:8000). On PCs requiring privileged Docker access, prefix Docker commands with `sudo`.
+
+Compose runs a one-time migration setup, the application, a queue worker, and Laravel's scheduler. The setup completes before the other processes start. SQLite data, uploads, sessions, logs, and the generated local encryption key persist in a named volume. These are local application processes; no CI or deployment tooling is included.
+
+```bash
+# Check startup and running processes:
+docker compose ps -a
+docker compose logs --tail=50 setup app queue scheduler
+
+# Stop while preserving all local data:
+docker compose down
+```
+
+**`docker compose down -v` deletes your local data and key.** Rebuild after changing source code. To use a different port:
+
+```bash
+APP_PORT=8001 docker compose up --build -d
+```
+
+Register as an author. Verification and password-reset email are written locally to the Laravel log:
+
+```bash
+docker compose exec app tail -n 100 storage/logs/laravel.log
+```
+
+Keep verification/reset links private. No real email provider or default administrator password is configured. Create a local administrator interactively:
+
+```bash
+docker compose exec app php artisan posts:admin admin@example.test
+```
+
+The command asks for credentials or confirms promotion of an existing account. The scheduler checks due articles every minute; the queue worker processes publishing, notifications, and media.
+
+## Tests and code checks
+
+```bash
+docker compose exec app php artisan test
+docker compose exec app vendor/bin/pest tests/Pest
+docker compose exec app vendor/bin/pint --test
+docker compose exec app composer audit
+```
+
+The test configuration overrides container settings and uses an isolated in-memory SQLite database, array sessions/cache/mail, and a test-only encryption key. Tests do not reset your personal application database.
+
+The suite includes existing PHPUnit regression tests and new Pest tests. Coverage includes workflow policies, cross-author access, atomic rollback, stale updates, scheduled-job idempotence, revision restoration, API abilities, Livewire validation/events/state, search pagination, query duplication, second-factor expiry/replay/recovery, and media validation/processing. Eloquent lazy loading is prohibited in development and tests to expose missing eager loads.
+
+### Browser checks
+
+Build the image first. With Node 22 and npm available on your PC:
+
+```bash
 npm ci
-npm run build
-php artisan serve
+npx playwright install chromium
+npm run test:browser
 ```
 
-Open [http://localhost:8000](http://localhost:8000). Register as an author; new users must verify their email before opening the editorial workspace. In the example environment, outgoing email is written to `storage/logs/laravel.log`, not sent to real inboxes.
-
-Create a local administrator interactively, using an email you control:
+Or use installed Chrome:
 
 ```bash
-php artisan posts:admin admin@example.test
+CHROME_BIN=/usr/bin/google-chrome npm run test:browser
 ```
 
-The command prompts for credentials when the account does not exist. It can also promote an existing account with confirmation. No default administrator credentials are stored in the repository.
+The test runner starts a disposable Docker container on port 8010, migrates `/tmp/posts-browser.sqlite` inside it, and creates a test-only editor. This database is separate from the Compose volume. Browser checks cover public reading, registration, verification gating, localization, Markdown preview, Livewire saves/search, reload persistence, mobile overflow, and serious/critical axe accessibility findings. The container is removed afterward. Screenshots use synthetic data from this workflow; automated checks do not replace manual accessibility review.
 
-## Queues and scheduled publishing
+## Application architecture
 
-Workflow notifications, media processing, and scheduled publishing use Laravel jobs. In separate local terminals, run:
+- `app/Actions`: invokable publishing, comment, media, role, and taxonomy actions. Multi-table writes use transactions; file uploads compensate for failed database writes.
+- `app/Livewire/PostEditor.php` and `Forms/PostForm.php`: component behavior separated from editable state and validation.
+- `app/Livewire/PostLibrary.php`: scoped, eager-loaded, paginated queries with `#[Computed]` and debounced search.
+- `app/Http/Requests`: validated and authorized HTTP/API inputs.
+- `app/Support/PostContentRules.php`: shared content rules for actions, HTTP requests, and Livewire forms.
+- `app/Policies`: permissions for posts, comments, media, users, categories, and tags.
+- `app/Enums`: backed status/role enums cast on models.
+- `app/Services/PostService.php`: compatibility facade delegating to publishing actions; it contains no publishing business rules.
 
-```bash
-php artisan queue:work
-php artisan schedule:work
-```
-
-The scheduler checks for due articles every minute. The publication job rechecks the post status and optimistic-lock version to guard against stale or duplicate delivery.
-
-## Development checks
-
-```bash
-php artisan test
-vendor/bin/pint --test
-npm ci
-npm run build
-composer audit
-npm audit
-```
-
-### Browser smoke tests
-
-Playwright checks public reading, registration, email-verification gating, language switching, login, creating a draft, and Markdown preview in Chromium. GitHub Actions automatically prepares a disposable SQLite database and a **test-only verified editor account** for these checks. The test account is not part of the ordinary application database.
-
-To run the same browser checks locally without touching your development database, first create a separate test environment and SQLite database, then serve the app on port 8010 with the built Vite assets. Install Chromium with `npx playwright install chromium`, and run `npm run test:browser` in a separate terminal. Do not run browser tests against a database containing real user data.
-
-
-GitHub Actions runs the PHPUnit suite, Pint, and Vite build on pushes and pull requests. All tests use an isolated in-memory SQLite database, with Vite disabled for PHP feature testing.
+See [architecture decisions](docs/ARCHITECTURE.md) for boundaries and tradeoffs.
 
 ## API
 
-The editorial API is under `/api/v1/posts`, protected by Sanctum authentication, email verification, and a named rate limiter. Endpoints check `read` or `write` token abilities as well as per-post authorization policies. Existing feature tests cover token restrictions, account isolation, tags, and SEO metadata.
+Editorial endpoints live under `/api/v1/posts`. They require Sanctum authentication, a verified email, the appropriate `read`/`write` token ability, and applicable policies. Pagination is bounded, filters are validated, and writes require the current `lock_version`. Web, API, and queued publication use the same publishing actions.
 
-## Project structure
+## Versions and scope
 
-- `app/Services/PostService.php`: content validation, state transitions, revisions, auditing, and version-aware mutations.
-- `app/Policies`: post, media, and comment permissions.
-- `app/Http/Controllers`: HTTP and JSON API endpoints.
-- `app/Jobs`: media processing and scheduled publication.
-- `database/migrations`: legacy-data modernization and the publishing schema.
-- `tests/Feature`: business workflows, HTTP access, and API regressions.
-- `resources/views`: editorial and public-facing pages.
+The committed lock files resolve stable Laravel 13 and Livewire 4 releases, with Tailwind CSS 4. The Docker image uses PHP 8.4 and Node 22; it is intended for local development. The existing users/posts schema is extended by migrations rather than replaced. Keep a copy of any existing data before applying schema changes.
 
-## Development notes and limitations
+This is one editorial workspace with SQLite full-text search. Multi-company isolation, collaborative real-time editing, external mail delivery, and public hosting are outside this implementation. Search on other database drivers uses a fallback; no MySQL/PostgreSQL verification is claimed.
 
-- This is a **portfolio/development application**, not an audited production service.
-- Publishing email is log-only until a real mail provider is configured.
-- A local `.env` file contains environment-specific secrets and must never be committed.
-- Local data should be backed up before applying schema changes to an existing database.
-- Review authorization, uploads, queue failure handling, accessibility, and restoration procedures before a public deployment.
-- No infrastructure-as-code or deployment pipeline is included by design.
+## Mobile editor
 
-## License
-
-See the repository's existing license and attribution information.
+<img src="docs/screenshots/editor-mobile.png" alt="Livewire article editor on a 390-pixel viewport" width="390">
