@@ -2,7 +2,7 @@
 
 A Laravel 13 application for one editorial team, built with Livewire 4 and Tailwind CSS 4. Authors draft articles, independent reviewers approve them, and editors publish or schedule them.
 
-![Livewire article editor](docs/screenshots/editor.png)
+![Editorial dashboard with demo articles](docs/screenshots/dashboard.png)
 
 ## Application features
 
@@ -63,6 +63,37 @@ docker compose exec app php artisan posts:admin admin@example.test
 
 The command asks for credentials or confirms promotion of an existing account. The scheduler checks due articles every minute; the queue worker processes publishing, notifications, and media.
 
+## Try the demo workspace
+
+Seeding is optional and never runs on normal Docker startup. To add a realistic local dataset:
+
+```bash
+docker compose exec app php artisan db:seed --class=DemoSeeder
+```
+
+The seeder adds 12 articles (two in each workflow status), three categories, four tags, moderated/pending comments, sample view counts, and four verified team accounts:
+
+| Role | Email |
+| --- | --- |
+| Administrator | `admin@demo.posts.test` |
+| Editor | `editor@demo.posts.test` |
+| Reviewer | `reviewer@demo.posts.test` |
+| Author | `author@demo.posts.test` |
+
+All newly created demo accounts use **`PostsDemo!2026`**. These public credentials are for local demonstrations only; the seeder refuses to run outside `local` and `testing`. Existing account credentials are preserved. A conflicting account role or article owner aborts the transaction instead of changing permissions or replacing content.
+
+Log in as the editor to explore the full workspace, or as the author to check ownership restrictions. Articles pass through the real publishing actions, so revisions and activity history reflect independent approval. Notifications are suppressed during seeding. You can rerun the command: existing demo articles, edits, credentials, and personal data are preserved. Scheduled demo articles will publish when their due time arrives while the scheduler and queue are running.
+
+`php artisan db:seed` calls the same seeder. Reusable Faker factories are available for users, posts, categories, tags, and comments, including published posts and approved comments. Factories create fixture records directly; use publishing actions when you need workflow history.
+
+### Demo screenshots
+
+These screenshots come from a separate database containing only synthetic demo data.
+
+![Article editor with demo Markdown content](docs/screenshots/editor.png)
+
+![Publishing calendar with scheduled demo articles](docs/screenshots/calendar.png)
+
 ## Tests and code checks
 
 ```bash
@@ -92,7 +123,7 @@ Or use installed Chrome:
 CHROME_BIN=/usr/bin/google-chrome npm run test:browser
 ```
 
-The test runner starts a disposable Docker container on port 8010, migrates `/tmp/posts-browser.sqlite` inside it, and creates a test-only editor. This database is separate from the Compose volume. Browser checks cover public reading, registration, verification gating, localization, Markdown preview, Livewire saves/search, reload persistence, mobile overflow, and serious/critical axe accessibility findings. The container is removed afterward. Screenshots use synthetic data from this workflow; automated checks do not replace manual accessibility review.
+The test runner starts a disposable Docker container on port 8010, migrates `/tmp/posts-browser.sqlite` inside it, and creates a test-only editor. This database is separate from the Compose volume. Browser checks cover public reading, registration, verification gating, localization, Markdown preview, Livewire saves/search, reload persistence, mobile overflow, and serious/critical axe accessibility findings. The container is removed afterward. README screenshots use the optional demo seeder in a separate database; automated checks do not replace manual accessibility review.
 
 ## Application architecture
 
