@@ -64,11 +64,13 @@ test('Livewire saves edits and filters articles without navigation', async ({ pa
   await page.getByRole('button', { name: 'Clear', exact: true }).click();
   await expect(page.locator('tbody')).toContainText('Searchable article');
   await page.getByRole('link', { name: /Searchable article/ }).first().click();
+  await expect(page.getByLabel('URL slug')).toHaveValue('searchable-article');
   await page.getByLabel('Title', { exact: true }).fill('Updated with Livewire');
   await page.getByRole('button', { name: 'Save changes', exact: true }).click();
   await expect(page.getByText('Changes saved.', { exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Updated with Livewire');
+  await expect(page.getByLabel('URL slug')).toHaveValue('searchable-article');
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations.filter(v => ['critical', 'serious'].includes(v.impact))).toEqual([]);
   await page.screenshot({ path: 'docs/screenshots/editor.png', fullPage: true });

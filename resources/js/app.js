@@ -10,7 +10,7 @@ if (editor) {
     const previewError = document.querySelector('#preview-error');
 
     // Suggest a slug only for new, empty slugs. Never overwrite a user's choice.
-    if (title && slug && !slug.value.trim()) {
+    if (editor.dataset.newPost === 'true' && title && slug && !slug.value.trim()) {
         let manuallyEdited = false;
         slug.addEventListener('input', () => { manuallyEdited = true; });
         title.addEventListener('input', () => {
