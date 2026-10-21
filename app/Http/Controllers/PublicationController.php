@@ -32,6 +32,6 @@ class PublicationController extends Controller
     {
         $posts = Post::published()->select(['slug', 'updated_at'])->orderBy('id')->get();
 
-        return response()->view('public.sitemap', compact('posts'))->header('Content-Type','application/xml');
+        return response()->view('public.sitemap', compact('posts'))->header('Content-Type', 'application/xml');
     }
 }
