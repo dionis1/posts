@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\Post;
 use App\Models\Tag;
 use App\Models\User;
+use App\Services\PostService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -55,7 +56,7 @@ class ApiV1Test extends TestCase
     {
         $owner = User::factory()->create(['role' => Role::Author, 'email_verified_at' => now()]);
         $stranger = User::factory()->create(['role' => Role::Author, 'email_verified_at' => now()]);
-        $post = app(\App\Services\PostService::class)->create($owner, ['title' => 'Private draft', 'body' => 'Not public']);
+        $post = app(PostService::class)->create($owner, ['title' => 'Private draft', 'body' => 'Not public']);
 
         Sanctum::actingAs($stranger, ['read']);
         $this->getJson('/api/v1/posts')->assertOk()->assertJsonMissing(['title' => 'Private draft']);
