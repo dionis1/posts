@@ -1,0 +1,43 @@
+x-local: &local
+  build: .
+  image: posts-local:latest
+  environment: &environment
+    APP_NAME: Posts
+    APP_ENV: local
+    APP_DEBUG: "true"
+    APP_URL: "http://localhost:${APP_PORT:-8000}"
+    DB_CONNECTION: sqlite
+    DB_DATABASE: /var/www/html/storage/app/posts.sqlite
+    SESSION_DRIVER: database
+    CACHE_STORE: file
+    QUEUE_CONNECTION: database
+    MAIL_MAILER: log
+    LOG_CHANNEL: stack
+    LOG_STACK: single
+  volumes:
+    - posts-storage:/var/www/html/storage
+services:
+  setup:
+    <<: *local
+    command: ["php", "artisan", "migrate", "--force", "--no-interaction"]
+  app:
+    <<: *local
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:${APP_PORT:-8000}:8000"
+  queue:
+    <<: *local
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    command: ["php", "artisan", "queue:work", "--sleep=1", "--tries=3", "--timeout=90"]
+  scheduler:
+    <<: *local
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    command: ["php", "artisan", "schedule:work"]
+volumes:
+  posts-storage:

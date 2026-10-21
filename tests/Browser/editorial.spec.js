@@ -43,3 +43,36 @@ test('verified editor can create a draft and preview Markdown', async ({ page })
   await expect(page).toHaveURL(/\/posts\/\d+\/edit$/);
   await expect(page.getByText('Draft created.')).toBeVisible();
 });
+
+test('Livewire saves edits and filters articles without navigation', async ({ page }) => {
+  await page.goto('/login');
+  await page.getByLabel('Email address').fill('editor-browser@example.test');
+  await page.getByLabel('Password', { exact: true }).fill('browser-test-password-123');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto('/posts/create');
+  await page.getByLabel('Title', { exact: true }).fill('Searchable article');
+  await page.getByLabel('Content', { exact: true }).fill('Browser search and save verification.');
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await expect(page).toHaveURL(/\/posts\/\d+\/edit$/);
+  await page.getByRole('link', { name: 'All content', exact: true }).first().click();
+  await page.getByPlaceholder('Search articles').fill('Searchable');
+  await expect(page.locator('tbody')).toContainText('Searchable article');
+  await page.getByPlaceholder('Search articles').fill('nothingmatches');
+  await expect(page.getByText('Your next story belongs here.')).toBeVisible();
+  // URL query state changes, but the browser document is not replaced.
+  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await expect(page.locator('tbody')).toContainText('Searchable article');
+  await page.getByRole('link', { name: /Searchable article/ }).first().click();
+  await page.getByLabel('Title', { exact: true }).fill('Updated with Livewire');
+  await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+  await expect(page.getByText('Changes saved.', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Title', { exact: true })).toHaveValue('Updated with Livewire');
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  expect(accessibility.violations.filter(v => ['critical', 'serious'].includes(v.impact))).toEqual([]);
+  await page.screenshot({ path: 'docs/screenshots/editor.png', fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: 'docs/screenshots/editor-mobile.png', fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
