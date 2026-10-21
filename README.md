@@ -69,6 +69,13 @@ composer audit
 npm audit
 ```
 
+### Browser smoke tests
+
+Playwright checks public reading, registration, email-verification gating, language switching, login, creating a draft, and Markdown preview in Chromium. GitHub Actions automatically prepares a disposable SQLite database and a **test-only verified editor account** for these checks. The test account is not part of the ordinary application database.
+
+To run the same browser checks locally without touching your development database, first create a separate test environment and SQLite database, then serve the app on port 8010 with the built Vite assets. Install Chromium with `npx playwright install chromium`, and run `npm run test:browser` in a separate terminal. Do not run browser tests against a database containing real user data.
+
+
 GitHub Actions runs the PHPUnit suite, Pint, and Vite build on pushes and pull requests. All tests use an isolated in-memory SQLite database, with Vite disabled for PHP feature testing.
 
 ## API
