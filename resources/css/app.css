@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/livewire/livewire/src/Features/SupportPagination/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 @source '../views/**/*.blade.php';
 
@@ -62,7 +63,7 @@ ul, ol { padding-left: 1.4rem; }
 .breadcrumb, .muted { color: #53647a; }
 .avatar { display: inline-grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; color: #214472; background: #d9e8ff; font-weight: 700; }
 .user-name { display: grid; font-size: .85rem; font-weight: 650; }
-.user-name small { color: #70829a; font-weight: 400; }
+.user-name small { color: #53647a; font-weight: 400; }
 .page { flex: 1; width: 100%; max-width: 1220px; padding: clamp(1rem, 3vw, 3rem); margin-inline: auto; }
 .page-heading, .page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
 .card { background: #fff; border: 1px solid #e1e8f1; border-radius: .85rem; box-shadow: 0 2px 12px rgb(18 35 62 / 4%); margin-bottom: 1.2rem; }
@@ -72,7 +73,7 @@ ul, ol { padding-left: 1.4rem; }
 .notice { background: #e4f6ec; color: #12643a; }
 .error-summary { background: #fff0ef; color: #9a2c25; }
 form.stack, .stack { display: grid; gap: 1rem; }
-form input:not([type=checkbox]):not([type=radio]):not([type=file]), form select, form textarea {
+.filter-bar input, .filter-bar select, form input:not([type=checkbox]):not([type=radio]):not([type=file]), form select, form textarea {
     width: 100%;
     min-height: 2.75rem;
     padding: .65rem .8rem;

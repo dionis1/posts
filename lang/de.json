@@ -148,5 +148,8 @@
     "Review changes and recover an earlier draft.": "Änderungen prüfen und einen früheren Entwurf wiederherstellen.",
     "Compare revisions": "Versionen vergleichen",
     "View published article": "Veröffentlichten Artikel ansehen",
-    "Good editing is a conversation. Leave useful feedback and make room for another perspective.": "Gute Redaktion lebt vom Austausch. Gib hilfreiches Feedback und berücksichtige andere Perspektiven."
+    "Good editing is a conversation. Leave useful feedback and make room for another perspective.": "Gute Redaktion lebt vom Austausch. Gib hilfreiches Feedback und berücksichtige andere Perspektiven.",
+    "Searching…": "Suche…",
+    "Unsaved content is not included in publishing actions. Save your changes first.": "Ungespeicherte Inhalte werden bei Veröffentlichungsaktionen nicht berücksichtigt. Speichern Sie zuerst Ihre Änderungen.",
+    "The password must be at most 72 bytes and cannot contain null characters.": "Das Passwort darf höchstens 72 Bytes lang sein und keine Nullzeichen enthalten."
 }

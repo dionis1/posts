@@ -30,6 +30,11 @@ class PostForm extends Form
 
     public string $canonical_url = '';
 
+    protected function validationAttributes(): array
+    {
+        return ['title' => __('Title'), 'body' => __('Content'), 'slug' => __('URL slug'), 'category_id' => __('Category'), 'cover_media_id' => __('Cover image')];
+    }
+
     protected function rules(): array
     {
         return PostContentRules::for($this->getComponent()->postId);
