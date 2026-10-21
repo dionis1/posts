@@ -116,7 +116,9 @@ class PostController extends Controller
             'meta_description' => ['nullable', 'string', 'max:160'],
             'canonical_url' => ['nullable', 'url:http,https', 'max:2048'],
         ];
-        if ($post) { $rules['lock_version'] = ['required', 'integer', 'min:1']; }
+        if ($post) {
+            $rules['lock_version'] = ['required', 'integer', 'min:1'];
+        }
 
         return $request->validate($rules);
     }

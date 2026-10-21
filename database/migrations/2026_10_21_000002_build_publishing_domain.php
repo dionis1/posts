@@ -79,7 +79,7 @@ return new class extends Migration
         // transactionally consistent, including writes made outside Eloquent.
         if (DB::getDriverName() === 'sqlite') {
             DB::statement("CREATE VIRTUAL TABLE post_search USING fts5(title, body, content='posts', content_rowid='id')");
-            DB::statement("CREATE TRIGGER posts_search_insert AFTER INSERT ON posts BEGIN INSERT INTO post_search(rowid, title, body) VALUES (new.id, new.title, new.body); END");
+            DB::statement('CREATE TRIGGER posts_search_insert AFTER INSERT ON posts BEGIN INSERT INTO post_search(rowid, title, body) VALUES (new.id, new.title, new.body); END');
             DB::statement("CREATE TRIGGER posts_search_delete AFTER DELETE ON posts BEGIN INSERT INTO post_search(post_search, rowid, title, body) VALUES ('delete', old.id, old.title, old.body); END");
             DB::statement("CREATE TRIGGER posts_search_update AFTER UPDATE OF title, body ON posts BEGIN INSERT INTO post_search(post_search, rowid, title, body) VALUES ('delete', old.id, old.title, old.body); INSERT INTO post_search(rowid, title, body) VALUES (new.id, new.title, new.body); END");
             DB::statement("INSERT INTO post_search(post_search) VALUES ('rebuild')");

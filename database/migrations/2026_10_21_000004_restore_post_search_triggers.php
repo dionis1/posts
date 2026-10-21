@@ -18,7 +18,7 @@ return new class extends Migration
         DB::statement('DROP TRIGGER IF EXISTS posts_search_delete');
         DB::statement('DROP TRIGGER IF EXISTS posts_search_update');
 
-        DB::statement("CREATE TRIGGER posts_search_insert AFTER INSERT ON posts BEGIN INSERT INTO post_search(rowid, title, body) VALUES (new.id, new.title, new.body); END");
+        DB::statement('CREATE TRIGGER posts_search_insert AFTER INSERT ON posts BEGIN INSERT INTO post_search(rowid, title, body) VALUES (new.id, new.title, new.body); END');
         DB::statement("CREATE TRIGGER posts_search_delete AFTER DELETE ON posts BEGIN INSERT INTO post_search(post_search, rowid, title, body) VALUES ('delete', old.id, old.title, old.body); END");
         DB::statement("CREATE TRIGGER posts_search_update AFTER UPDATE OF title, body ON posts BEGIN INSERT INTO post_search(post_search, rowid, title, body) VALUES ('delete', old.id, old.title, old.body); INSERT INTO post_search(rowid, title, body) VALUES (new.id, new.title, new.body); END");
 

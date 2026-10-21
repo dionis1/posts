@@ -16,11 +16,30 @@ class Comment extends Model
         return ['moderated_at' => 'datetime', 'depth' => 'integer'];
     }
 
-    public function post(): BelongsTo { return $this->belongsTo(Post::class); }
-    public function user(): BelongsTo { return $this->belongsTo(User::class); }
-    public function author(): BelongsTo { return $this->belongsTo(User::class, 'user_id'); }
-    public function parent(): BelongsTo { return $this->belongsTo(self::class, 'parent_id'); }
-    public function children(): HasMany { return $this->hasMany(self::class, 'parent_id'); }
+    public function post(): BelongsTo
+    {
+        return $this->belongsTo(Post::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function author(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
 
     public function scopeApproved(Builder $query): Builder
     {

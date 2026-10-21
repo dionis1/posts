@@ -9,8 +9,15 @@ use App\Models\User;
 
 class MediaPolicy
 {
-    public function viewAny(User $user): bool { return true; }
-    public function create(User $user): bool { return $user->role !== Role::Reviewer; }
+    public function viewAny(User $user): bool
+    {
+        return true;
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->role !== Role::Reviewer;
+    }
 
     public function view(?User $user, Media $media): bool
     {

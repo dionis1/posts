@@ -13,7 +13,9 @@ use App\Models\User;
 use App\Notifications\WorkflowChanged;
 use App\Services\PostService;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
@@ -327,7 +329,7 @@ class WorkflowTest extends TestCase
         $this->service->delete($author, $post, 1);
         $this->assertSoftDeleted('posts', ['id' => $post->id]);
         $this->assertDatabaseHas('activities', ['post_id' => $post->id, 'event' => 'post.deleted']);
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
         $this->service->update($author, $post, ['body' => 'Resurrected'], 1);
     }
 
@@ -336,7 +338,7 @@ class WorkflowTest extends TestCase
         $author = $this->actor();
         $post = $this->service->create($author, ['title' => 'Concurrency control', 'body' => 'Optimistic locking protects editors.']);
         // Verify the FTS index independently of the Eloquent scope.
-        $matches = \Illuminate\Support\Facades\DB::select('SELECT rowid FROM post_search WHERE post_search MATCH ?', ['"optimistic" AND "locking"']);
+        $matches = DB::select('SELECT rowid FROM post_search WHERE post_search MATCH ?', ['"optimistic" AND "locking"']);
         $this->assertSame([$post->id], array_map(fn ($row) => $row->rowid, $matches));
         $this->assertSame([$post->id], Post::search('optimistic locking')->pluck('id')->all());
         $this->assertSame([$post->id], Post::search('"optimistic" + locking*')->pluck('id')->all());

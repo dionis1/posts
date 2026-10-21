@@ -15,6 +15,7 @@ class ProcessMedia implements ShouldQueue
     use Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 90;
 
     public function __construct(public int $mediaId) {}
@@ -27,11 +28,15 @@ class ProcessMedia implements ShouldQueue
     public function handle(): void
     {
         $media = Media::find($this->mediaId);
-        if (! $media || $media->status === 'ready') { return; }
+        if (! $media || $media->status === 'ready') {
+            return;
+        }
         $disk = Storage::disk($media->disk);
         $raw = $disk->get($media->path);
         $image = $raw === null ? false : @imagecreatefromstring($raw);
-        if ($image === false) { throw new RuntimeException('Unable to decode uploaded raster image.'); }
+        if ($image === false) {
+            throw new RuntimeException('Unable to decode uploaded raster image.');
+        }
         $width = imagesx($image);
         $height = imagesy($image);
         $ratio = min(1, 480 / max($width, $height));
@@ -43,8 +48,12 @@ class ProcessMedia implements ShouldQueue
         $path = 'media/processed/'.$media->id.'.png';
         $thumbnailPath = 'media/processed/'.$media->id.'-thumb.png';
         try {
-            ob_start(); imagepng($image, null, 6); $output = ob_get_clean();
-            ob_start(); imagepng($thumb, null, 6); $thumbnail = ob_get_clean();
+            ob_start();
+            imagepng($image, null, 6);
+            $output = ob_get_clean();
+            ob_start();
+            imagepng($thumb, null, 6);
+            $thumbnail = ob_get_clean();
             if (! $disk->put($path, $output) || ! $disk->put($thumbnailPath, $thumbnail)) {
                 throw new RuntimeException('Unable to store processed image.');
             }
@@ -57,7 +66,9 @@ class ProcessMedia implements ShouldQueue
             if (! $updated && ! Media::whereKey($media->id)->exists()) {
                 $disk->delete([$path, $thumbnailPath]);
             }
-            if ($originalPath !== $path) { $disk->delete($originalPath); }
+            if ($originalPath !== $path) {
+                $disk->delete($originalPath);
+            }
         } finally {
             imagedestroy($image);
             imagedestroy($thumb);
